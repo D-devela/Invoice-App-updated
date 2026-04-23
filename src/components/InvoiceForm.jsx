@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useInvoiceValidation } from '../hooks/useInvoiceValidation';
 
 const InvoiceForm = ({ onSubmit, initialData = null }) => {
   const navigate = useNavigate();
-  const { validateInvoice } = useInvoiceValidation();
   const [formData, setFormData] = useState(initialData || {
     clientName: '',
     clientEmail: '',
@@ -16,18 +14,51 @@ const InvoiceForm = ({ onSubmit, initialData = null }) => {
   });
   const [errors, setErrors] = useState({});
 
-  const handleSubmit = async (e, status = 'pending') => {
-    e.preventDefault();
-    const dataToSubmit = { ...formData, status };
-    const validationErrors = validateInvoice(dataToSubmit);
+  const validateForm = () => {
+    const newErrors = {};
     
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+    if (!formData.clientName?.trim()) {
+      newErrors.clientName = 'Client name is required';
     }
     
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.clientEmail?.trim()) {
+      newErrors.clientEmail = 'Client email is required';
+    } else if (!emailRegex.test(formData.clientEmail)) {
+      newErrors.clientEmail = 'Valid email is required';
+    }
+    
+    if (!formData.dueDate) {
+      newErrors.dueDate = 'Due date is required';
+    }
+    
+    if (!formData.items?.length) {
+      newErrors.items = 'At least one item is required';
+    } else {
+      formData.items.forEach((item, idx) => {
+        if (!item.name?.trim()) {
+          newErrors[`items.${idx}.name`] = 'Item name required';
+        }
+        if (item.quantity <= 0) {
+          newErrors[`items.${idx}.quantity`] = 'Quantity must be positive';
+        }
+        if (item.price <= 0) {
+          newErrors[`items.${idx}.price`] = 'Price must be positive';
+        }
+      });
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e, status = 'pending') => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     const total = formData.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-    onSubmit({ ...dataToSubmit, total });
+    onSubmit({ ...formData, status, total });
     navigate('/');
   };
 
@@ -41,7 +72,6 @@ const InvoiceForm = ({ onSubmit, initialData = null }) => {
     setFormData({ ...formData, items: [...formData.items, { name: '', quantity: 1, price: 0 }] });
   };
 
-  
   return (
     <form className="invoice-form" onSubmit={(e) => e.preventDefault()}>
       <h2 className="heading-m">{initialData ? `Edit #${initialData.id}` : 'New Invoice'}</h2>
@@ -101,15 +131,26 @@ const InvoiceForm = ({ onSubmit, initialData = null }) => {
           />
         </div>
         <div className="form-group">
-          <label>Payment Terms <span className="required-star">*</span></label>
-          <select 
-            value={formData.paymentTerms}
-            onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-          >
-            <option>Net 1 Day</option><option>Net 7 Days</option><option>Net 14 Days</option>
-            <option>Net 30 Days</option><option>Net 60 Days</option>
-          </select>
+          <label>Due Date <span className="required-star">*</span></label>
+          <input 
+            type="date"
+            className={errors.dueDate ? 'error' : ''}
+            value={formData.dueDate}
+            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+          />
+          {errors.dueDate && <span className="error-message">{errors.dueDate}</span>}
         </div>
+      </div>
+
+      <div className="form-group">
+        <label>Payment Terms</label>
+        <select 
+          value={formData.paymentTerms}
+          onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
+        >
+          <option>Net 1 Day</option><option>Net 7 Days</option><option>Net 14 Days</option>
+          <option>Net 30 Days</option><option>Net 60 Days</option>
+        </select>
       </div>
 
       <div className="form-group">
@@ -130,16 +171,19 @@ const InvoiceForm = ({ onSubmit, initialData = null }) => {
           <div key={idx} className="item-row">
             <input 
               placeholder="Item name"
+              className={errors[`items.${idx}.name`] ? 'error' : ''}
               value={item.name}
               onChange={(e) => updateItem(idx, 'name', e.target.value)}
             />
             <input 
               type="number" 
+              className={errors[`items.${idx}.quantity`] ? 'error' : ''}
               value={item.quantity}
               onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
             />
             <input 
               type="number" 
+              className={errors[`items.${idx}.price`] ? 'error' : ''}
               value={item.price}
               onChange={(e) => updateItem(idx, 'price', parseFloat(e.target.value) || 0)}
             />
@@ -147,6 +191,7 @@ const InvoiceForm = ({ onSubmit, initialData = null }) => {
           </div>
         ))}
         <button type="button" className="add-item-btn" onClick={addItem}>+ Add New Item</button>
+        {errors.items && <span className="error-message">{errors.items}</span>}
       </div>
 
       <div className="form-actions">

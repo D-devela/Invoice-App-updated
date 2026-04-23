@@ -11,6 +11,15 @@ const InvoiceDetail = ({ invoices, onUpdate, onDelete }) => {
 
   if (!invoice) return <div>Invoice not found</div>;
 
+  const handleMarkAsPaid = () => {
+    if (invoice.status === 'pending') {
+      onUpdate({ ...invoice, status: 'paid' });
+    }
+  };
+
+  const canMarkAsPaid = invoice.status === 'pending';
+  const canEdit = invoice.status !== 'paid';
+
   return (
     <>
       <Link to="/" className="go-back">
@@ -23,14 +32,16 @@ const InvoiceDetail = ({ invoices, onUpdate, onDelete }) => {
           <StatusBadge status={invoice.status} />
         </div>
         <div className="action-buttons">
-          <button className="btn-secondary" onClick={() => navigate(`/invoice/edit/${id}`)}>
-            Edit
-          </button>
+          {canEdit && (
+            <button className="btn-secondary" onClick={() => navigate(`/invoice/edit/${id}`)}>
+              Edit
+            </button>
+          )}
           <button className="btn-delete" onClick={() => setShowDeleteModal(true)}>
             Delete
           </button>
-          {invoice.status !== 'paid' && invoice.status !== 'draft' && (
-            <button className="btn-primary" onClick={() => onUpdate({ ...invoice, status: 'paid' })}>
+          {canMarkAsPaid && (
+            <button className="btn-primary" onClick={handleMarkAsPaid}>
               Mark as Paid
             </button>
           )}
@@ -74,10 +85,7 @@ const InvoiceDetail = ({ invoices, onUpdate, onDelete }) => {
 
         <div className="items-table">
           <div className="items-header">
-            <span>Item Name</span>
-            <span>QTY</span>
-            <span>Price</span>
-            <span>Total</span>
+            <span>Item Name</span><span>QTY</span><span>Price</span><span>Total</span>
           </div>
           {invoice.items && invoice.items.length > 0 ? invoice.items.map((item, idx) => (
             <div key={idx} className="item-row">

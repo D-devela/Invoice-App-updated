@@ -1,26 +1,49 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { ThemeProvider, ThemeContext } from './contexts/ThemeContext';
 import InvoiceList from './components/InvoiceList';
 import InvoiceDetail from './components/InvoiceDetail';
 import InvoiceForm from './components/InvoiceForm';
+import ThemeToggle from './components/ThemeToggle';
 
 const STORAGE_KEY = 'invoices';
+
+// Navbar Component
+const Navbar = () => {
+  const { theme, toggleTheme } = React.useContext(ThemeContext);
+  
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/" className="navbar-logo">
+          <div className="logo-icon"></div>
+          <span className="logo-text">Invoice App</span>
+        </Link>
+        <div className="navbar-right">
+          <ThemeToggle />
+          <div className="profile-section">
+            <span className="profile-id">John Doe</span>
+            <div className="profile-avatar">JD</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
 
 function App() {
   const [invoices, setInvoices] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return JSON.parse(saved);
     
-    // Sample data matching screenshots
     return [
-      { id: 'RT3080', clientName: 'Jensen Huang', dueDate: '19 Aug 2021', total: 1800.90, status: 'paid', clientEmail: 'jensen@example.com', items: [] },
-      { id: 'XM9141', clientName: 'Alex Grim', dueDate: '20 Sep 2021', total: 556.00, status: 'pending', clientEmail: 'alex@example.com', items: [] },
-      { id: 'RG0314', clientName: 'John Morrison', dueDate: '01 Oct 2021', total: 14002.33, status: 'pending', clientEmail: 'john@example.com', items: [] },
-      { id: 'RT2080', clientName: 'Alysa Werner', dueDate: '12 Oct 2021', total: 102.04, status: 'pending', clientEmail: 'alysa@example.com', items: [] },
-      { id: 'AA1449', clientName: 'Melissa Clarke', dueDate: '14 Oct 2021', total: 4032.33, status: 'pending', clientEmail: 'melissa@example.com', items: [] },
-      { id: 'TY9141', clientName: 'Thomas Wayne', dueDate: '31 Oct 2021', total: 6155.91, status: 'pending', clientEmail: 'thomas@example.com', items: [] },
-      { id: 'FV2353', clientName: 'Anita Weimwright', dueDate: '12 Nov 2021', total: 3102.04, status: 'draft', clientEmail: 'anita@example.com', items: [] }
+      { id: 'RT3080', clientName: 'Jensen Huang', clientEmail: 'jensen@example.com', dueDate: '19 Aug 2021', invoiceDate: '19 Aug 2021', total: 1800.90, status: 'paid', items: [{ name: 'Banner Design', quantity: 1, price: 1800.90 }] },
+      { id: 'XM9141', clientName: 'Alex Grim', clientEmail: 'alex@example.com', dueDate: '20 Sep 2021', invoiceDate: '21 Aug 2021', total: 556.00, status: 'pending', items: [{ name: 'Banner Design', quantity: 1, price: 156.00 }, { name: 'Email Design', quantity: 2, price: 200.00 }] },
+      { id: 'RG0314', clientName: 'John Morrison', clientEmail: 'john@example.com', dueDate: '01 Oct 2021', invoiceDate: '01 Sep 2021', total: 14002.33, status: 'pending', items: [] },
+      { id: 'RT2080', clientName: 'Alysa Werner', clientEmail: 'alysa@example.com', dueDate: '12 Oct 2021', invoiceDate: '12 Sep 2021', total: 102.04, status: 'pending', items: [] },
+      { id: 'AA1449', clientName: 'Melissa Clarke', clientEmail: 'melissa@example.com', dueDate: '14 Oct 2021', invoiceDate: '14 Sep 2021', total: 4032.33, status: 'pending', items: [] },
+      { id: 'TY9141', clientName: 'Thomas Wayne', clientEmail: 'thomas@example.com', dueDate: '31 Oct 2021', invoiceDate: '01 Oct 2021', total: 6155.91, status: 'pending', items: [] },
+      { id: 'FV2353', clientName: 'Anita Weimwright', clientEmail: 'anita@example.com', dueDate: '12 Nov 2021', invoiceDate: '12 Oct 2021', total: 3102.04, status: 'draft', items: [] }
     ];
   });
 
@@ -49,7 +72,8 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <div className="container">
+        <Navbar />
+        <div className="app-container">
           <Routes>
             <Route path="/" element={
               <InvoiceList 
